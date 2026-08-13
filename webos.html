@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="Nebula WebOS — операционная система в браузере. Один HTML-файл, чистый Vanilla JS, без библиотек." />
+<title>Nebula WebOS</title>
+<style>
+/* ════════════════════════════════════════════════════════════
+   NEBULA WEBOS — единый файл
+   Glassmorphism + неоновый кибер-эстет, темы, обои, окна, док.
+   ════════════════════════════════════════════════════════════ */
+
+/* ─────────── Переменные и темы ─────────── */
+:root, [data-theme="glass"] {
+  --accent: #8b5cf6;
+  --accent-2: #22d3ee;
+  --glow: rgba(139, 92, 246, .45);
+  --glass: rgba(255, 255, 255, .07);
+  --glass-2: rgba(255, 255, 255, .13);
+  --glass-3: rgba(20, 24, 48, .55);
+  --border: rgba(255, 255, 255, .14);
+  --text: #eef0ff;
+  --text-dim: rgba(238, 240, 255, .6);
+  --danger: #ff5f57;
+  --warn: #febc2e;
+  --ok: #28c840;
+  --dock-h: 64px;
+  --radius: 16px;
+  --shadow: 0 24px 60px -12px rgba(0, 0, 0, .55);
+  --mono: 'SF Mono', ui-monospace, Menlo, Consolas, 'Cascadia Code', monospace;
+  color-scheme: dark;
+}
+
+[data-theme="cyber"] {
+  --accent: #ff2d95;
+  --accent-2: #17e9ff;
+  --glow: rgba(255, 45, 149, .5);
+  --glass: rgba(30, 8, 42, .34);
+  --glass-2: rgba(255, 255, 255, .1);
+  --glass-3: rgba(24, 6, 34, .6);
+  --border: rgba(255, 255, 255, .18);
+  --text: #f6f2ff;
+  --text-dim: rgba(246, 242, 255, .62);
+}
+
+[data-theme="light"] {
+  --accent: #7c3aed;
+  --accent-2: #0ea5e9;
+  --glow: rgba(124, 58, 237, .35);
+  --glass: rgba(255, 255, 255, .52);
+  --glass-2: rgba(255, 255, 255, .72);
+  --glass-3: rgba(255, 255, 255, .8);
+  --border: rgba(15, 23, 42, .14);
+  --text: #1e293b;
+  --text-dim: rgba(30, 41, 59, .62);
+  --shadow: 0 24px 60px -16px rgba(15, 23, 42, .35);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --accent: #60a5fa;
+  --accent-2: #34d399;
+  --glow: rgba(96, 165, 250, .4);
+  --glass: rgba(12, 16, 26, .6);
+  --glass-2: rgba(255, 255, 255, .1);
+  --glass-3: rgba(10, 13, 22, .75);
+  --border: rgba(255, 255, 255, .12);
+  --text: #e6ecf5;
+  --text-dim: rgba(230, 236, 245, .58);
+}
+
+/* ─────────── База ─────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  background: #070812;
+  user-select: none;
+  -webkit-user-select: none;
+}
+input, textarea { user-select: text; -webkit-user-select: text; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--glass-2); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: var(--glow); }
+
+/* ─────────── Рабочий стол ─────────── */
+#desktop { position: fixed; inset: 0; overflow: hidden; }
+
+/* Живой canvas-фон (частицы) */
+#bg-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+
+/* Цветовая подложка обоев (слои градиентов поверх частиц) */
+#wallpaper-tint {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(160deg, rgba(8, 10, 30, .5), rgba(30, 16, 60, .3) 50%, rgba(8, 30, 60, .4));
+  transition: background .8s ease;
+  pointer-events: none;
+}
+#desktop[data-wallpaper="cyber"] #wallpaper-tint {
+  background: linear-gradient(155deg, rgba(40, 4, 44, .62), rgba(70, 8, 60, .42) 45%, rgba(8, 60, 70, .5));
+}
+#desktop[data-wallpaper="minimal"] #wallpaper-tint {
+  background: linear-gradient(160deg, rgba(10, 12, 16, .66), rgba(24, 26, 34, .5) 50%, rgba(14, 16, 24, .6));
+}
+#desktop[data-wallpaper="mountains"] #wallpaper-tint {
+  background: linear-gradient(165deg, rgba(6, 28, 40, .5), rgba(14, 46, 60, .35) 40%, rgba(80, 40, 90, .3) 75%, rgba(200, 120, 60, .25));
+}
+[data-theme="light"] #wallpaper-tint { opacity: .25; }
+[data-theme="light"] #desktop { background: #dfe7f5; }
+
+/* ─────────── Экран загрузки ─────────── */
+#boot {
+  position: fixed; inset: 0; z-index: 10000;
+  display: grid; place-items: center;
+  background: radial-gradient(80% 80% at 50% 40%, #10122a, #070812 75%);
+  transition: opacity .6s ease, visibility .6s ease;
+}
+#boot.hide { opacity: 0; visibility: hidden; }
+.boot-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.boot-logo {
+  font-size: 64px; color: var(--accent);
+  text-shadow: 0 0 34px var(--glow), 0 0 70px var(--glow);
+  animation: logoPulse 1.5s ease-in-out infinite;
+}
+@keyframes logoPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: .8; } }
+.boot-title { font-size: 20px; letter-spacing: 12px; font-weight: 700; text-indent: 12px; }
+.boot-title span { color: var(--accent); }
+.boot-bar { width: 220px; height: 4px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.boot-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px var(--glow); animation: bootLoad 1.5s cubic-bezier(.3,.7,.3,1) forwards; }
+@keyframes bootLoad { to { width: 100%; } }
+.boot-hint { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+
+/* ─────────── Иконки рабочего стола ─────────── */
+#desktop-icons {
+  position: absolute; inset: 0; z-index: 5;
+  display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start;
+  gap: 14px; padding: 18px 14px;
+  pointer-events: none;
+}
+.d-icon {
+  pointer-events: auto;
+  width: 86px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 4px 6px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  cursor: default;
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
+}
+.d-icon .di-emoji {
+  font-size: 34px; line-height: 1;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.45));
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1);
+}
+.d-icon .di-name {
+  font-size: 11px; color: #eef0ff; text-align: center; line-height: 1.25;
+  text-shadow: 0 1px 4px rgba(0,0,0,.8);
+  max-width: 82px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.d-icon:hover { background: rgba(255,255,255,.12); }
+.d-icon:hover .di-emoji { transform: translateY(-4px) scale(1.12); }
+.d-icon.selected { background: rgba(139,92,246,.22); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 6px 18px -6px var(--glow); }
+[data-theme="light"] .d-icon .di-name { color: #1e293b; text-shadow: none; }
+
+/* ─────────── Окна ─────────── */
+#windows-layer { position: absolute; inset: 0; z-index: 10; }
+
+.window {
+  position: absolute;
+  display: flex; flex-direction: column;
+  min-width: 300px; min-height: 200px;
+  max-width: calc(100vw - 16px); max-height: calc(100vh - var(--dock-h) - 24px);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: linear-gradient(165deg, var(--glass-2), var(--glass));
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  opacity: 0;
+  animation: winIn .28s cubic-bezier(.2,.9,.32,1.12) forwards;
+  transition: opacity .22s ease, transform .22s ease, visibility .22s;
+}
+.window.is-focused {
+  border-color: rgba(255,255,255,.28);
+  box-shadow:
+    0 0 0 1px var(--glow),
+    0 0 44px -8px var(--glow),
+    0 34px 80px -14px rgba(0,0,0,.65);
+}
+@keyframes winIn { from { opacity: 0; transform: scale(.9) translateY(18px); filter: blur(6px); } to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); } }
+.window.is-closing { animation: winOut .2s ease forwards; pointer-events: none; }
+@keyframes winOut { to { opacity: 0; transform: scale(.88) translateY(16px); filter: blur(8px); } }
+.window.is-minimized {
+  transform: scale(.55) translateY(90px);
+  opacity: 0; visibility: hidden;
+  transition: transform .24s ease, opacity .24s ease, visibility .24s;
+  animation: none;
+}
+.window.is-maximized { border-radius: 0; border-left: none; border-right: none; border-top: none; }
+
+.win-header {
+  flex: 0 0 40px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 8px 0 14px;
+  cursor: default;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.045), transparent);
+  touch-action: none;
+}
+.win-title {
+  display: flex; align-items: center; gap: 8px;
+  flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  font-size: 13.5px; font-weight: 600; letter-spacing: .2px;
+}
+.win-title .w-ico { font-size: 15px; filter: drop-shadow(0 0 6px var(--glow)); }
+.win-controls { display: flex; gap: 7px; }
+.win-ctl {
+  width: 13px; height: 13px; border-radius: 50%;
+  position: relative;
+  display: grid; place-items: center;
+  color: rgba(0,0,0,.65); font-size: 10px; line-height: 1;
+  transition: transform .15s ease, filter .15s ease;
+}
+.win-ctl:hover { transform: scale(1.25); filter: brightness(1.15); }
+.win-ctl:active { transform: scale(.9); }
+.win-ctl.close { background: var(--danger); }
+.win-ctl.min { background: var(--warn); }
+.win-ctl.max { background: var(--ok); }
+.win-ctl::after { content: ''; opacity: 0; transition: opacity .12s ease; }
+.win-ctl.close::after { content: '×'; }
+.win-ctl.min::after { content: '–'; font-weight: 700; }
+.win-ctl.max::after { content: '+'; font-weight: 700; }
+.win-controls:hover .win-ctl::after { opacity: 1; }
+
+.win-body { flex: 1; overflow: auto; display: flex; flex-direction: column; min-height: 0; }
+
+/* Ресайз-хендл (нижний правый угол) */
+.win-resize {
+  position: absolute; right: 0; bottom: 0;
+  width: 18px; height: 18px;
+  cursor: nwse-resize;
+  z-index: 5;
+  touch-action: none;
+}
+.win-resize::after {
+  content: '';
+  position: absolute; right: 4px; bottom: 4px;
+  width: 7px; height: 7px;
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
+  border-bottom-right-radius: 3px;
+  opacity: .55;
+}
+.window.is-maximized .win-resize { display: none; }
+
+/* ─────────── Dock / панель задач ─────────── */
+#dock {
+  position: fixed;
+  left: 50%; bottom: 12px;
+  transform: translateX(-50%);
+  z-index: 5000;
+  height: var(--dock-h);
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 10px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: linear-gradient(170deg, var(--glass-2), var(--glass));
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: 0 22px 50px -14px rgba(0,0,0,.6);
+  animation: dockUp .6s .15s cubic-bezier(.2,.9,.3,1.1) backwards;
+}
+@keyframes dockUp { from { opacity: 0; transform: translate(-50%, 44px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+#start-btn {
+  width: 44px; height: 44px; flex: 0 0 auto;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  font-size: 22px; color: var(--accent);
+  display: grid; place-items: center;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, background .2s ease;
+  text-shadow: 0 0 12px var(--glow);
+}
+#start-btn:hover { transform: translateY(-3px) scale(1.08); background: var(--glass-2); box-shadow: 0 10px 22px -8px var(--glow); }
+#start-btn.active { transform: translateY(-2px) scale(1.05); background: var(--glass-2); }
+
+.dock-sep { width: 1px; height: 38px; background: linear-gradient(180deg, transparent, var(--border), transparent); flex: 0 0 auto; }
+
+#dock-icons { display: flex; gap: 9px; align-items: center; }
+.dock-icon {
+  position: relative;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  font-size: 24px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: var(--glass);
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, background .22s ease;
+}
+.dock-icon:hover { transform: translateY(-8px) scale(1.12); background: var(--glass-2); box-shadow: 0 12px 24px -8px var(--glow), 0 0 20px -4px var(--glow); }
+.dock-icon:active { transform: translateY(-4px) scale(1.04); }
+.dock-icon .tip {
+  position: absolute; top: -32px; left: 50%;
+  transform: translateX(-50%) scale(.9);
+  padding: 4px 10px; font-size: 11.5px; white-space: nowrap;
+  border-radius: 8px;
+  background: rgba(10, 12, 24, .9);
+  border: 1px solid var(--border);
+  color: var(--text);
+  opacity: 0; pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+.dock-icon:hover .tip { opacity: 1; transform: translateX(-50%) scale(1); }
+.dock-icon .dot {
+  position: absolute; bottom: 3px; left: 50%;
+  width: 5px; height: 5px; border-radius: 50%;
+  transform: translateX(-50%);
+  background: var(--text-dim);
+  opacity: 0;
+  transition: opacity .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.dock-icon.is-open .dot { opacity: 1; }
+.dock-icon.is-active .dot { background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); }
+.dock-icon.is-min { filter: grayscale(.55) brightness(.82); }
+
+/* Системный трей */
+#tray { display: flex; align-items: center; gap: 4px; margin-left: 6px; }
+.tray-btn {
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  display: grid; place-items: center;
+  font-size: 17px;
+  border: 1px solid transparent;
+  transition: background .15s ease, transform .15s ease, border-color .15s ease;
+  position: relative;
+}
+.tray-btn:hover { background: var(--glass-2); border-color: var(--border); transform: translateY(-1px); }
+.tray-btn.off { opacity: .5; }
+
+/* Попап громкости */
+#vol-pop {
+  position: fixed; bottom: calc(var(--dock-h) + 24px); left: 50%;
+  transform: translateX(-50%) translateY(8px) scale(.96);
+  z-index: 5100;
+  padding: 14px 16px;
+  min-width: 240px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: linear-gradient(170deg, var(--glass-3), var(--glass));
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  box-shadow: 0 18px 44px -10px rgba(0,0,0,.55);
+  display: flex; flex-direction: column; gap: 10px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease;
+}
+#vol-pop.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0) scale(1); }
+.vol-row { display: flex; align-items: center; gap: 10px; }
+.vol-row .vol-ico { font-size: 18px; width: 24px; text-align: center; }
+.vol-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.vol-mute {
+  font-size: 12px; padding: 6px 10px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--glass);
+  transition: background .15s ease;
+}
+.vol-mute:hover { background: var(--glass-2); }
+.vol-test { font-size: 12px; padding: 6px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--glass); transition: background .15s ease; }
+.vol-test:hover { background: var(--glass-2); }
+
+/* Часы в трее */
+#tray-clock { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; margin-left: 8px; min-width: 92px; }
+#clock-time { font-size: 15px; font-weight: 700; letter-spacing: .5px; font-variant-numeric: tabular-nums; }
+#clock-date { font-size: 10.5px; color: var(--text-dim); }
+
+/* ─────────── Меню «Пуск» ─────────── */
+#start-menu {
+  position: fixed;
+  left: 50%; bottom: calc(var(--dock-h) + 28px);
+  transform: translateX(-50%) translateY(16px) scale(.96);
+  z-index: 5100;
+  width: min(380px, 94vw);
+  max-height: calc(100vh - var(--dock-h) - 44px);
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: linear-gradient(170deg, var(--glass-3), var(--glass));
+  backdrop-filter: blur(30px) saturate(170%);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  box-shadow: 0 30px 70px -18px rgba(0,0,0,.65);
+  display: flex; flex-direction: column; gap: 12px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+#start-menu.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0) scale(1); }
+
+.sm-user { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.sm-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 19px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 6px 18px -6px var(--glow);
+}
+.sm-user .sm-name { font-size: 14px; font-weight: 700; }
+.sm-user .sm-sub { font-size: 11.5px; color: var(--text-dim); }
+
+.sm-sec-title { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-dim); }
+
+.sm-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sm-stat { padding: 8px 10px; border-radius: 11px; border: 1px solid var(--border); background: var(--glass); }
+.sm-stat .smk { font-size: 10.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .8px; }
+.sm-stat .smv { font-size: 12.5px; font-weight: 600; margin-top: 3px; }
+.sm-ram { grid-column: 1 / -1; }
+.ram-bar { height: 5px; border-radius: 3px; background: var(--glass-2); overflow: hidden; margin-top: 6px; }
+.ram-bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .4s ease; }
+
+.sm-apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.sm-app {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 4px; border-radius: 13px;
+  border: 1px solid transparent;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+.sm-app:hover { background: var(--glass-2); border-color: var(--border); transform: translateY(-2px); }
+.sm-app .sa-ico { font-size: 25px; filter: drop-shadow(0 3px 8px rgba(0,0,0,.4)); }
+.sm-app .sa-name { font-size: 11px; text-align: center; }
+
+.sm-foot { display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; }
+.sm-btn {
+  flex: 1; padding: 9px 10px; border-radius: 11px;
+  font-size: 12.5px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--glass);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: background .15s ease, transform .15s ease, color .15s ease;
+}
+.sm-btn:hover { background: var(--glass-2); }
+.sm-btn.reboot:hover { color: var(--danger); border-color: var(--danger); transform: scale(1.02); }
+
+/* ─────────── Контекстное меню ─────────── */
+#ctx-menu {
+  position: fixed; z-index: 9000;
+  min-width: 210px; padding: 6px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: linear-gradient(170deg, var(--glass-3), var(--glass));
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  box-shadow: 0 18px 44px -10px rgba(0,0,0,.55);
+  opacity: 0; pointer-events: none;
+  transform: scale(.94) translateY(4px);
+  transform-origin: top left;
+  transition: opacity .13s ease, transform .13s ease;
+}
+#ctx-menu.show { opacity: 1; pointer-events: auto; transform: scale(1) translateY(0); }
+.ctx-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; font-size: 13px; border-radius: 8px;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.ctx-item:hover { background: var(--glow); }
+.ctx-item .ctx-ico { font-size: 14px; }
+.ctx-sep { height: 1px; margin: 6px 8px; background: var(--border); }
+
+/* ─────────── Приложение: Заметки ─────────── */
+.app-notes { display: flex; flex-direction: column; height: 100%; }
+.notes-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.notes-bar input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font: inherit; font-weight: 600; font-size: 14px;
+}
+.notes-bar input::placeholder { color: var(--text-dim); font-weight: 400; }
+.notes-status { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.notes-clear {
+  border: 1px solid var(--border); background: var(--glass);
+  color: var(--text-dim); font-size: 12px;
+  padding: 5px 10px; border-radius: 9px;
+  transition: color .15s ease, border-color .15s ease, transform .15s ease;
+}
+.notes-clear:hover { color: var(--danger); border-color: var(--danger); transform: scale(1.04); }
+.notes-body {
+  flex: 1; resize: none; border: none; outline: none;
+  background: transparent; color: var(--text);
+  font-family: var(--mono); font-size: 14px; line-height: 1.65;
+  padding: 14px 16px;
+}
+.notes-body::placeholder { color: var(--text-dim); }
+.notes-count { padding: 7px 14px; font-size: 11px; color: var(--text-dim); border-top: 1px solid var(--border); }
+
+/* ─────────── Приложение: Терминал ─────────── */
+.app-term {
+  position: relative;
+  display: flex; flex-direction: column; flex: 1; min-height: 0;
+  background: rgba(4, 8, 16, .86);
+  font-family: var(--mono); font-size: 13.5px;
+  color: #c9ffe0;
+}
+.term-out { flex: 1; overflow-y: auto; padding: 14px 16px; white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+.term-line { display: flex; align-items: center; gap: 8px; padding: 9px 16px; border-top: 1px solid rgba(255,255,255,.06); }
+.term-prompt { color: #22e0b0; font-weight: 600; white-space: nowrap; }
+.term-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; color: inherit; font: inherit; caret-color: #22e0b0; }
+.term-matrix {
+  position: absolute; inset: 0; z-index: 6;
+  width: 100%; height: 100%;
+  background: rgba(2, 8, 4, .92);
+  display: none;
+}
+.term-matrix.on { display: block; }
+.t-ok { color: #6bffa3; }
+.t-err { color: #ff7a8a; }
+.t-dim { color: #7f93b8; }
+.t-acc { color: #22e0b0; }
+.t-ac2 { color: #ff8ad1; }
+.t-neon { color: #3cffb0; text-shadow: 0 0 10px rgba(60,255,176,.6); }
+
+/* ─────────── Приложение: Калькулятор ─────────── */
+.app-calc { display: flex; flex: 1; min-height: 0; }
+.calc-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.calc-screen {
+  flex: 0 0 84px;
+  display: flex; flex-direction: column;
+  align-items: flex-end; justify-content: flex-end;
+  padding: 12px 16px; gap: 3px;
+  overflow: hidden;
+}
+.calc-expr { font-size: 12.5px; color: var(--text-dim); font-variant-numeric: tabular-nums; min-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.calc-current { font-size: 32px; font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calc-grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 8px; padding: 4px 12px 14px; }
+.calc-btn {
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--glass); color: var(--text); font-size: 18px;
+  transition: transform .1s ease, background .14s ease, box-shadow .14s ease;
+}
+.calc-btn:hover { background: var(--glass-2); transform: translateY(-1px); }
+.calc-btn:active { transform: scale(.93); }
+.calc-btn.op { color: var(--accent-2); font-weight: 600; }
+.calc-btn.danger { color: var(--danger); }
+.calc-btn.fn { color: var(--accent); font-weight: 600; }
+.calc-btn.eq { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; font-weight: 700; box-shadow: 0 8px 20px -6px var(--glow); }
+.calc-btn.zero { grid-column: span 2; }
+.calc-hist {
+  width: 128px; flex: 0 0 auto;
+  border-left: 1px solid var(--border);
+  background: var(--glass);
+  display: flex; flex-direction: column;
+  transition: width .2s ease, opacity .2s ease;
+  overflow: hidden;
+}
+.calc-hist.hidden { width: 0; opacity: 0; border-left: none; }
+.calc-hist h4 { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); padding: 12px 12px 6px; }
+.calc-hist-list { flex: 1; overflow-y: auto; padding: 0 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.hist-item {
+  font-family: var(--mono); font-size: 11.5px;
+  padding: 6px 8px; border-radius: 8px;
+  background: var(--glass-2); cursor: pointer;
+  transition: background .12s ease;
+}
+.hist-item:hover { background: var(--glow); }
+.hist-item .hi-expr { color: var(--text-dim); }
+.hist-item .hi-res { color: var(--text); font-weight: 700; }
+.calc-hist-btn { border: 1px solid var(--border); background: var(--glass); font-size: 13px; padding: 4px 9px; border-radius: 8px; color: var(--text-dim); transition: color .15s ease, border-color .15s ease; }
+.calc-hist-btn:hover { color: var(--accent-2); border-color: var(--accent-2); }
+
+/* ─────────── Приложение: Настройки ─────────── */
+.app-settings { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 18px; }
+.settings-sec { display: flex; flex-direction: column; gap: 10px; }
+.settings-sec h3 { font-size: 12px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-dim); }
+.opt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.opt-card {
+  border: 1px solid var(--border); border-radius: 13px;
+  background: var(--glass); padding: 8px; cursor: pointer; text-align: left;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.opt-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+.opt-card.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 10px 24px -8px var(--glow); }
+.opt-preview { height: 50px; border-radius: 9px; margin-bottom: 7px; border: 1px solid var(--border); }
+.opt-name { font-size: 12.5px; font-weight: 600; display: block; }
+.opt-desc { font-size: 10.5px; color: var(--text-dim); display: block; margin-top: 2px; }
+.vol-ctl { display: flex; align-items: center; gap: 12px; }
+.vol-ctl .vol-ico { font-size: 20px; }
+.vol-ctl input[type="range"] { flex: 1; accent-color: var(--accent); }
+.theme-quick { display: flex; gap: 8px; }
+.tq-btn {
+  flex: 1; padding: 10px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--glass);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+.tq-btn:hover { background: var(--glass-2); border-color: var(--accent); transform: translateY(-2px); }
+.settings-reset { align-self: flex-start; border: 1px solid var(--border); background: var(--glass); color: var(--text); font-size: 13px; padding: 8px 16px; border-radius: 11px; transition: transform .15s ease, border-color .15s ease, color .15s ease; }
+.settings-reset:hover { border-color: var(--danger); color: var(--danger); transform: scale(1.03); }
+
+/* ─────────── Приложение: Музыка ─────────── */
+.app-music { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.music-head { padding: 14px 16px 8px; }
+.music-title { font-size: 15px; font-weight: 700; }
+.music-artist { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+.music-viz {
+  flex: 0 0 96px; margin: 8px 16px 4px;
+  border-radius: 13px;
+  border: 1px solid var(--border);
+  background: rgba(6, 10, 20, .5);
+}
+.music-progress { display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.music-progress .mp-bar { flex: 1; height: 4px; border-radius: 3px; background: var(--glass-2); overflow: hidden; }
+.music-progress .mp-bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.music-controls { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 8px 16px; }
+.mc-btn {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 17px;
+  border: 1px solid var(--border); background: var(--glass);
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.mc-btn:hover { background: var(--glass-2); transform: scale(1.1); box-shadow: 0 6px 16px -6px var(--glow); }
+.mc-btn:active { transform: scale(.92); }
+.mc-btn.play { width: 54px; height: 54px; font-size: 21px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; box-shadow: 0 10px 24px -8px var(--glow); }
+.music-list { padding: 6px 12px 14px; display: flex; flex-direction: column; gap: 5px; }
+.m-track {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 11px;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background .13s ease, border-color .13s ease;
+}
+.m-track:hover { background: var(--glass-2); }
+.m-track.active { background: var(--glass-2); border-color: var(--accent); }
+.m-track .mt-ico { font-size: 17px; }
+.m-track .mt-name { flex: 1; font-size: 12.5px; font-weight: 600; }
+.m-track .mt-dur { font-size: 11px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+/* ─────────── Приложение: Файлы ─────────── */
+.app-files { display: flex; flex: 1; min-height: 0; }
+.files-side {
+  width: 150px; flex: 0 0 auto;
+  border-right: 1px solid var(--border);
+  padding: 10px 8px;
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--glass);
+}
+.fs-nav { display: flex; align-items: center; gap: 6px; padding: 8px; font-size: 12px; font-weight: 600; border-radius: 9px; cursor: pointer; transition: background .13s ease; }
+.fs-nav:hover { background: var(--glass-2); }
+.fs-nav.disabled { opacity: .4; pointer-events: none; }
+.fs-folder {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; font-size: 12.5px; border-radius: 9px;
+  cursor: pointer; border: 1px solid transparent;
+  transition: background .13s ease, border-color .13s ease;
+}
+.fs-folder:hover { background: var(--glass-2); }
+.fs-folder.active { background: var(--glass-2); border-color: var(--accent); }
+.files-main { flex: 1; padding: 12px; overflow-y: auto; }
+.files-path { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; font-family: var(--mono); }
+.files-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 10px; }
+.f-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 6px 8px; border-radius: 12px;
+  border: 1px solid transparent; cursor: pointer;
+  transition: background .13s ease, border-color .13s ease, transform .13s ease;
+  text-align: center;
+}
+.f-item:hover { background: var(--glass-2); border-color: var(--border); transform: translateY(-2px); }
+.f-item.selected { background: var(--glow); border-color: var(--accent); }
+.f-item .fi-ico { font-size: 30px; filter: drop-shadow(0 3px 8px rgba(0,0,0,.4)); }
+.f-item .fi-name { font-size: 11px; max-width: 82px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files-empty { color: var(--text-dim); font-size: 13px; text-align: center; padding: 40px 0; }
+
+/* ─────────── Приложение: Просмотрщик ─────────── */
+.app-viewer { flex: 1; overflow: auto; display: grid; place-items: center; padding: 16px; }
+.app-viewer pre {
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6;
+  color: var(--text); white-space: pre-wrap; word-break: break-word;
+  max-width: 100%;
+}
+.app-viewer img { max-width: 100%; max-height: 100%; border-radius: 10px; box-shadow: 0 12px 34px -10px rgba(0,0,0,.55); }
+
+/* ─────────── Служебное ─────────── */
+.dragging { cursor: grabbing !important; }
+.dragging * { cursor: grabbing !important; }
+.fade-in { animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Адаптивность */
+@media (max-width: 720px) {
+  #dock { padding: 0 6px; gap: 6px; }
+  .dock-icon { width: 40px; height: 40px; font-size: 20px; }
+  #start-btn { width: 40px; height: 40px; }
+  .tray-btn { width: 34px; height: 34px; font-size: 15px; }
+  #clock-date { display: none; }
+  .d-icon { width: 72px; }
+  .d-icon .di-emoji { font-size: 28px; }
+}
+@media (max-width: 520px) {
+  .dock-icon .tip { display: none; }
+  #clock-time { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+  <!-- Экран загрузки -->
+  <div id="boot">
+    <div class="boot-inner">
+      <div class="boot-logo">◐</div>
+      <div class="boot-title">NEBULA<span>WEBOS</span></div>
+      <div class="boot-bar"><i></i></div>
+      <div class="boot-hint" id="boot-hint">загрузка ядра…</div>
+    </div>
+  </div>
+
+  <!-- Рабочий стол -->
+  <div id="desktop" data-wallpaper="space">
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <div id="wallpaper-tint" aria-hidden="true"></div>
+    <div id="desktop-icons"></div>
+    <section id="windows-layer"></section>
+    <div id="ctx-menu" role="menu"></div>
+  </div>
+
+  <!-- Dock / панель задач -->
+  <nav id="dock" aria-label="Панель задач">
+    <button id="start-btn" title="Пуск" aria-label="Меню Пуск">◐</button>
+    <div class="dock-sep"></div>
+    <div id="dock-icons"></div>
+    <div class="dock-sep"></div>
+    <div id="tray">
+      <button class="tray-btn" id="tray-wifi" title="Wi-Fi: подключено">📶</button>
+      <button class="tray-btn" id="tray-vol" title="Громкость">🔊</button>
+      <button class="tray-btn" id="tray-full" title="Полноэкранный режим">⛶</button>
+      <div id="tray-clock">
+        <span id="clock-time">--:--:--</span>
+        <span id="clock-date">—</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Попап громкости -->
+  <div id="vol-pop" role="dialog" aria-label="Громкость">
+    <div class="vol-row">
+      <span class="vol-ico" id="vol-ico">🔊</span>
+      <input type="range" id="vol-slider" min="0" max="100" value="70" aria-label="Уровень громкости" />
+    </div>
+    <div class="vol-row">
+      <button class="vol-mute" id="vol-mute">🔇 Выключить звук</button>
+      <button class="vol-test" id="vol-test">▶ Тест</button>
+    </div>
+  </div>
+
+  <!-- Меню «Пуск» -->
+  <div id="start-menu" role="menu" aria-label="Меню Пуск"></div>
+
+<script>
+"use strict";
+/* ════════════════════════════════════════════════════════════
+   Модуль 1: Утилиты, Хранилище, Аудио-движок, Живой фон
+   ════════════════════════════════════════════════════════════ */
+
+/* ─────────── Утилиты ─────────── */
+const $  = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const pad2 = n => String(n).padStart(2, '0');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// Хранилище поверх localStorage с защитой от приватного режима
+const Store = {
+  get(key, fb) {
+    try {
+      const v = JSON.parse(localStorage.getItem(key));
+      return v === null || v === undefined ? fb : v;
+    } catch { return fb; }
+  },
+  set(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* приватный режим */ }
+  },
+  del(key) {
+    try { localStorage.removeItem(key); } catch {}
+  },
+};
+
+/* ─────────── Аудио-движок (Web Audio API) ─────────── */
+// Генерирует короткие звуки UI (клик/открытие/закрытие/ошибка),
+// служит мастер-шиной для громкости и музыки.
+const AudioSys = {
+  ctx: null,
+  master: null,
+  volume: 0.7,
+  muted: false,
+
+  ensure() {
+    if (!this.ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : this.volume;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return true;
+  },
+
+  // Базовый «блип»: осциллятор + огибающая затухания
+  blip(freq, dur = 0.12, type = 'sine', vol = 0.16, slide = 0) {
+    if (!this.ensure()) return;
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2200;
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(lp); lp.connect(g); g.connect(this.master);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  },
+
+  click()      { this.blip(620, .07, 'sine', .1); },
+  open()       { this.blip(440, .1, 'sine', .12, 380); },
+  close()      { this.blip(520, .12, 'sine', .12, -260); },
+  error()      { this.blip(190, .18, 'sawtooth', .08); this.blip(150, .2, 'sawtooth', .07); },
+  success()    { this.blip(660, .09, 'sine', .1); setTimeout(() => this.blip(880, .12, 'sine', .1), 90); },
+
+  setVolume(v) {
+    this.volume = clamp(v, 0, 1);
+    if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
+    Store.set('nebula.volume', this.volume);
+  },
+
+  toggleMute() {
+    this.muted = !this.muted;
+    if (this.master) this.master.gain.value = this.muted ? 0 : this.volume;
+    return this.muted;
+  },
+};
+
+/* ─────────── Живой фон: canvas-частицы ─────────── */
+// Рой светящихся частиц, соединённых линиями; цвет зависит от обоев,
+// лёгкий параллакс за курсором.
+const Bg = {
+  canvas: null, ctx: null,
+  parts: [], raf: 0,
+  hue: 262, alpha: 1,
+  mouse: { x: -9999, y: -9999 },
+
+  init() {
+    this.canvas = document.getElementById('bg-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    window.addEventListener('pointermove', e => {
+      this.mouse.x = e.clientX; this.mouse.y = e.clientY;
+    });
+    const n = Math.min(90, Math.floor(window.innerWidth * window.innerHeight / 18000));
+    for (let i = 0; i < n; i++) this.parts.push(this.make());
+    this.loop();
+  },
+
+  make() {
+    return {
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      vx: (Math.random() - .5) * .55,
+      vy: (Math.random() - .5) * .55,
+      r: Math.random() * 2.2 + .7,
+    };
+  },
+
+  resize() {
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = window.innerWidth * dpr;
+    this.canvas.height = window.innerHeight * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  },
+
+  // Оттенок частиц под обои
+  setWallpaper(id) {
+    const hues = { space: 262, cyber: 315, minimal: 215, mountains: 185 };
+    this.hue = hues[id] ?? 262;
+    this.alpha = id === 'minimal' ? .5 : 1;
+  },
+
+  loop() {
+    const { ctx, parts } = this;
+    const W = window.innerWidth, H = window.innerHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    // Параллакс: частицы слегка тянутся за курсором
+    const px = (this.mouse.x - W / 2) * .012;
+    const py = (this.mouse.y - H / 2) * .012;
+
+    for (const p of parts) {
+      p.x += p.vx + px * .006;
+      p.y += p.vy + py * .006;
+      if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20;
+      if (p.y < -20) p.y = H + 20; if (p.y > H + 20) p.y = -20;
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle = `hsl(${this.hue} 85% 70%)`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Линии между близкими частицами
+    ctx.lineWidth = .6;
+    for (let i = 0; i < parts.length; i++) {
+      for (let j = i + 1; j < parts.length; j++) {
+        const a = parts[i], b = parts[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 130 * 130) {
+          ctx.globalAlpha = (1 - Math.sqrt(d2) / 130) * .35 * this.alpha;
+          ctx.strokeStyle = `hsl(${this.hue} 90% 75%)`;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    this.raf = requestAnimationFrame(() => this.loop());
+  },
+};
+
+/* ════════════════════════════════════════════════════════════
+   Модуль 2: Темы, Обои, Оконный менеджер, Иконки стола, Док, Пуск
+   ════════════════════════════════════════════════════════════ */
+
+/* ─────────── Темы и обои ─────────── */
+const THEMES = {
+  glass:   { name: 'Стекло',   desc: 'Неоновый футуризм', preview: ['#0b0d1f', '#8b5cf6', '#22d3ee'] },
+  cyber:   { name: 'Кибер',    desc: 'Кислотный неон',    preview: ['#1e082a', '#ff2d95', '#17e9ff'] },
+  light:   { name: 'Светлая',  desc: 'Дневной режим',     preview: ['#e8eefb', '#7c3aed', '#0ea5e9'] },
+  dark:    { name: 'Тёмная',   desc: 'Минимализм',        preview: ['#0a0d14', '#60a5fa', '#34d399'] },
+};
+
+const WALLPAPERS = [
+  { id: 'space',     name: 'Космос',     desc: 'Глубокий космос',  preview: 'linear-gradient(160deg,#0b0d1f,#2a1655 50%,#0f2b46)' },
+  { id: 'cyber',     name: 'Киберпанк',  desc: 'Неоновый город',   preview: 'linear-gradient(160deg,#1c0722,#4a0b5e 45%,#0a3a44)' },
+  { id: 'minimal',   name: 'Минимализм', desc: 'Чистота и покой',  preview: 'linear-gradient(160deg,#14161c,#262a34 50%,#10121a)' },
+  { id: 'mountains', name: 'Горы',       desc: 'Рассвет в горах',  preview: 'linear-gradient(165deg,#061c28,#0e2e3c 40%,#503a5a 78%,#c87a3c)' },
+];
+
+const Settings = {
+  theme: Store.get('nebula.theme', 'glass'),
+  wallpaper: Store.get('nebula.wallpaper', 'space'),
+
+  applyTheme(id) {
+    if (!THEMES[id]) return false;
+    this.theme = id;
+    document.documentElement.dataset.theme = id;
+    Store.set('nebula.theme', id);
+    return true;
+  },
+
+  applyWallpaper(id) {
+    if (!WALLPAPERS.some(w => w.id === id)) return false;
+    this.wallpaper = id;
+    const desk = document.getElementById('desktop');
+    desk.dataset.wallpaper = id;
+    Bg.setWallpaper(id);
+    Store.set('nebula.wallpaper', id);
+    return true;
+  },
+
+  reset() {
+    Store.del('nebula.theme'); Store.del('nebula.wallpaper');
+    Store.del('nebula.volume'); Store.del('nebula.notes');
+    this.applyTheme('glass');
+    this.applyWallpaper('space');
+    AudioSys.setVolume(.7);
+  },
+};
+
+/* ─────────── Менеджер окон ─────────── */
+const WM = {
+  layer: null,
+  windows: new Map(),
+  active: null,
+  zTop: 100,
+  seed: 0,
+
+  init() { this.layer = document.getElementById('windows-layer'); },
+
+  dockHeight() { return 84; },
+
+  // Открыть приложение: фокус/восстановление или создание
+  open(appId) {
+    const app = Apps.list[appId];
+    if (!app) return;
+    const win = this.windows.get(appId);
+    if (win) {
+      if (win.classList.contains('is-minimized')) this.restore(win);
+      this.focus(win);
+      AudioSys.click();
+      return;
+    }
+    this.create(app);
+  },
+
+  // Позиционирование без перекрытия: поиск свободного слота по сетке
+  place(width, height) {
+    const wins = [...this.windows.values()];
+    const collides = (x, y, w, h) => wins.some(win => {
+      if (win.classList.contains('is-minimized')) return false;
+      const a = { l: x, t: y, r: x + w, b: y + h };
+      const b = { l: win.offsetLeft, t: win.offsetTop, r: win.offsetLeft + win.offsetWidth, b: win.offsetTop + win.offsetHeight };
+      return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+    });
+    const base = 28;
+    const maxLeft = Math.max(base, window.innerWidth - width - 20);
+    const maxTop = Math.max(base, window.innerHeight - this.dockHeight() - height - 20);
+    for (const step of [40, 20]) {
+      for (let y = base; y <= maxTop; y += step) {
+        for (let x = base; x <= maxLeft; x += step) {
+          if (!collides(x, y, width, height)) return { left: x, top: y };
+        }
+      }
+    }
+    const n = (this.seed++) % 5;
+    return { left: Math.min(base + n * 40, maxLeft), top: Math.min(base + n * 40, maxTop) };
+  },
+
+  // Создание окна. app — объект {id,name,icon,width,height,mount(body,win)->hooks}
+  create(app) {
+    const layer = this.layer;
+    // Дозакрывающееся окно того же приложения убираем сразу
+    layer.querySelectorAll(`.window.is-closing[data-app="${app.id}"]`).forEach(w => w.remove());
+
+    const width = Math.min(app.width, window.innerWidth - 16);
+    const height = Math.min(app.height, window.innerHeight - this.dockHeight() - 16);
+    const pos = this.place(width, height);
+
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.dataset.app = app.id;
+    win.style.width = width + 'px';
+    win.style.height = height + 'px';
+    win.style.left = pos.left + 'px';
+    win.style.top = pos.top + 'px';
+    win.innerHTML = `
+      <header class="win-header">
+        <div class="win-title"><span class="w-ico">${app.icon}</span><span>${esc(app.name)}</span></div>
+        <div class="win-controls">
+          <button class="win-ctl min" title="Свернуть" aria-label="Свернуть"></button>
+          <button class="win-ctl max" title="Развернуть" aria-label="Развернуть"></button>
+          <button class="win-ctl close" title="Закрыть" aria-label="Закрыть"></button>
+        </div>
+      </header>
+      <div class="win-body"></div>
+      <div class="win-resize" title="Изменить размер"></div>`;
+
+    const body = win.querySelector('.win-body');
+    const hooks = app.mount(body, win) || {};
+    win._focusHook = hooks.focus || null;
+    win._destroyHook = hooks.destroy || null;
+
+    this.wireWindow(win);
+    layer.appendChild(win);
+    this.windows.set(app.id, win);
+    this.focus(win);
+    AudioSys.open();
+    Dock.refresh();
+    if (win._focusHook) setTimeout(() => { if (!win._destroyed) win._focusHook(); }, 300);
+    return win;
+  },
+
+  // Окно-просмотрщик файла (динамическое приложение)
+  openViewer(file) {
+    const app = {
+      id: 'viewer-' + Date.now(),
+      name: file.name,
+      icon: file.icon || '📄',
+      width: 520, height: 440,
+      mount(body) {
+        const root = document.createElement('div');
+        root.className = 'app-viewer';
+        if (file.type === 'img') {
+          const img = document.createElement('img');
+          img.src = file.data;
+          img.alt = file.name;
+          root.appendChild(img);
+        } else {
+          const pre = document.createElement('pre');
+          pre.textContent = file.content;
+          root.appendChild(pre);
+        }
+        body.appendChild(root);
+        return {};
+      },
+    };
+    return this.create(app);
+  },
+
+  // События окна: фокус, кнопки, drag, ресайз
+  wireWindow(win) {
+    win.addEventListener('pointerdown', () => this.focus(win));
+
+    const ctl = win.querySelector('.win-controls');
+    ctl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.win-ctl');
+      if (!btn) return;
+      e.stopPropagation();
+      if (btn.classList.contains('close')) this.close(win);
+      else if (btn.classList.contains('min')) this.minimize(win);
+      else this.toggleMaximize(win);
+    });
+
+    win.querySelector('.win-header').addEventListener('dblclick', (e) => {
+      if (e.target.closest('.win-controls')) return;
+      this.toggleMaximize(win);
+    });
+
+    this.wireDrag(win);
+    this.wireResize(win);
+  },
+
+  // Перетаскивание за шапку (Pointer Events, без лагов)
+  wireDrag(win) {
+    const header = win.querySelector('.win-header');
+    header.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.win-controls')) return;
+      if (win.classList.contains('is-maximized')) return;
+      this.focus(win);
+      const rect = win.getBoundingClientRect();
+      const ox = e.clientX - rect.left;
+      const oy = e.clientY - rect.top;
+      const minX = -(win.offsetWidth - 120); // минимум ~120px видно — окно не «теряется»
+      const maxX = window.innerWidth - 70;
+      const maxY = window.innerHeight - this.dockHeight() - 16;
+
+      const onMove = (ev) => {
+        win.style.left = clamp(ev.clientX - ox, minX, maxX) + 'px';
+        win.style.top = clamp(ev.clientY - oy, 0, maxY) + 'px';
+      };
+      const onUp = () => {
+        document.body.classList.remove('dragging');
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+      };
+      document.body.classList.add('dragging');
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  },
+
+  // Ресайз за нижний правый угол
+  wireResize(win) {
+    const handle = win.querySelector('.win-resize');
+    handle.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      if (win.classList.contains('is-maximized')) return;
+      this.focus(win);
+      const startW = win.offsetWidth;
+      const startH = win.offsetHeight;
+      const sx = e.clientX, sy = e.clientY;
+
+      const onMove = (ev) => {
+        const w = clamp(startW + (ev.clientX - sx), 300, window.innerWidth - 12);
+        const h = clamp(startH + (ev.clientY - sy), 200, window.innerHeight - this.dockHeight() - 12);
+        win.style.width = w + 'px';
+        win.style.height = h + 'px';
+      };
+      const onUp = () => {
+        document.body.classList.remove('dragging');
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+      };
+      document.body.classList.add('dragging');
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+    });
+  },
+
+  focus(win) {
+    if (!win || win._destroyed) return;
+    if (win.classList.contains('is-minimized')) return;
+    this.active = win;
+    win.style.zIndex = ++this.zTop;
+    this.windows.forEach(w => w.classList.toggle('is-focused', w === win));
+    Dock.refresh();
+  },
+
+  minimize(win) {
+    win.classList.add('is-minimized');
+    win.classList.remove('is-focused');
+    if (this.active === win) this.active = null;
+    AudioSys.click();
+    Dock.refresh();
+  },
+
+  restore(win) {
+    win.classList.remove('is-minimized');
+    this.focus(win);
+    if (win._focusHook) setTimeout(() => { if (!win._destroyed) win._focusHook(); }, 260);
+  },
+
+  toggleMaximize(win) {
+    const isMax = win.classList.toggle('is-maximized');
+    if (isMax) {
+      win._saved = { left: win.style.left, top: win.style.top, width: win.style.width, height: win.style.height };
+      win.style.left = '0px';
+      win.style.top = '0px';
+      win.style.width = window.innerWidth + 'px';
+      win.style.height = (window.innerHeight - this.dockHeight()) + 'px';
+      win.querySelector('.win-ctl.max').title = 'Восстановить';
+    } else {
+      const s = win._saved;
+      if (s) {
+        win.style.left = s.left; win.style.top = s.top;
+        win.style.width = s.width; win.style.height = s.height;
+      }
+      win.querySelector('.win-ctl.max').title = 'Развернуть';
+      this.focus(win);
+    }
+    AudioSys.click();
+  },
+
+  close(win) {
+    if (win._destroyed) return;
+    if (win._destroyHook) { try { win._destroyHook(); } catch {} }
+    win._destroyed = true;
+    win.classList.add('is-closing');
+    this.windows.delete(win.dataset.app);
+    if (this.active === win) this.active = null;
+    setTimeout(() => win.remove(), 200);
+    AudioSys.close();
+    Dock.refresh();
+  },
+
+  count() { return this.windows.size; },
+};
+
+/* ─────────── Иконки рабочего стола ─────────── */
+const DesktopIcons = {
+  root: null,
+
+  init() {
+    this.root = document.getElementById('desktop-icons');
+    for (const id in Apps.list) {
+      const app = Apps.list[id];
+      if (app.desktop === false) continue;
+      const ic = document.createElement('div');
+      ic.className = 'd-icon';
+      ic.dataset.app = id;
+      ic.setAttribute('role', 'button');
+      ic.innerHTML = `<div class="di-emoji">${app.icon}</div><div class="di-name">${esc(app.name)}</div>`;
+      ic.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.select(ic);
+        AudioSys.click();
+      });
+      ic.addEventListener('dblclick', () => WM.open(id));
+      this.root.appendChild(ic);
+    }
+    // Клик по пустому месту стола снимает выделение
+    document.getElementById('windows-layer').addEventListener('pointerdown', (e) => {
+      if (e.target === WM.layer) this.select(null);
+    });
+  },
+
+  select(ic) {
+    $$('.d-icon', this.root).forEach(x => x.classList.toggle('selected', x === ic));
+  },
+};
+
+/* ─────────── Dock / панель задач + трей ─────────── */
+const Dock = {
+  iconsEl: null,
+  iconEls: new Map(),
+  wifiOn: true,
+
+  init() {
+    this.iconsEl = document.getElementById('dock-icons');
+    for (const id in Apps.list) {
+      const app = Apps.list[id];
+      if (app.dock === false) continue;
+      const icon = document.createElement('button');
+      icon.className = 'dock-icon';
+      icon.dataset.app = id;
+      icon.setAttribute('aria-label', app.name);
+      icon.innerHTML = `<span>${app.icon}</span><span class="tip">${esc(app.name)}</span><span class="dot"></span>`;
+      icon.title = app.name;
+      icon.addEventListener('click', () => { AudioSys.click(); WM.open(id); });
+      this.iconsEl.appendChild(icon);
+      this.iconEls.set(id, icon);
+    }
+    this.refresh();
+    this.startClock();
+    this.wireTray();
+  },
+
+  // Индикаторы: открыто / свёрнуто / в фокусе
+  refresh() {
+    this.iconEls.forEach((icon, id) => {
+      const win = WM.windows.get(id);
+      icon.classList.toggle('is-open', !!win && !win._destroyed);
+      icon.classList.toggle('is-min', !!(win && win.classList.contains('is-minimized')));
+      icon.classList.toggle('is-active', WM.active === win && !!win);
+    });
+  },
+
+  startClock() {
+    const timeEl = document.getElementById('clock-time');
+    const dateEl = document.getElementById('clock-date');
+    const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    const tick = () => {
+      const now = new Date();
+      timeEl.textContent = `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+      dateEl.textContent = `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+    };
+    tick();
+    setInterval(tick, 1000);
+  },
+
+  wireTray() {
+    // Wi-Fi (симуляция)
+    const wifi = document.getElementById('tray-wifi');
+    wifi.addEventListener('click', () => {
+      this.wifiOn = !this.wifiOn;
+      wifi.textContent = this.wifiOn ? '📶' : '📵';
+      wifi.classList.toggle('off', !this.wifiOn);
+      wifi.title = this.wifiOn ? 'Wi-Fi: подключено' : 'Wi-Fi: отключено';
+      AudioSys.click();
+    });
+
+    // Громкость
+    const volBtn = document.getElementById('tray-vol');
+    const pop = document.getElementById('vol-pop');
+    const slider = document.getElementById('vol-slider');
+    const ico = document.getElementById('vol-ico');
+    slider.value = Math.round(AudioSys.volume * 100);
+    const updIco = () => {
+      const v = AudioSys.volume;
+      const lvl = AudioSys.muted || v === 0 ? 0 : v < .35 ? 1 : v < .7 ? 2 : 3;
+      ico.textContent = ['🔇','🔈','🔉','🔊'][lvl];
+      document.getElementById('vol-mute').textContent = AudioSys.muted ? '🔊 Включить звук' : '🔇 Выключить звук';
+      volBtn.textContent = ico.textContent;
+    };
+    updIco();
+    volBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pop.classList.toggle('show');
+    });
+    slider.addEventListener('input', () => { AudioSys.setVolume(slider.value / 100); updIco(); });
+    document.getElementById('vol-mute').addEventListener('click', () => {
+      AudioSys.toggleMute();
+      updIco();
+      AudioSys.click();
+    });
+    document.getElementById('vol-test').addEventListener('click', () => {
+      AudioSys.success();
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (!pop.contains(e.target) && e.target !== volBtn) pop.classList.remove('show');
+    });
+
+    // Полноэкранный режим
+    const full = document.getElementById('tray-full');
+    full.addEventListener('click', () => {
+      AudioSys.click();
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    });
+    document.addEventListener('fullscreenchange', () => {
+      const on = !!document.fullscreenElement;
+      full.textContent = on ? '✕' : '⛶';
+      full.title = on ? 'Выйти из полноэкранного режима' : 'Полноэкранный режим';
+    });
+  },
+};
+
+/* ─────────── Меню «Пуск» ─────────── */
+const StartMenu = {
+  el: null,
+  bootTime: Date.now(),
+  updater: 0,
+
+  init() {
+    this.el = document.getElementById('start-menu');
+    this.build();
+    const btn = document.getElementById('start-btn');
+    btn.addEventListener('click', (e) => { e.stopPropagation(); this.toggle(); });
+    document.addEventListener('pointerdown', (e) => {
+      if (!this.el.contains(e.target) && !btn.contains(e.target)) this.close();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.close(); });
+  },
+
+  build() {
+    const apps = Object.values(Apps.list)
+      .filter(a => a.dock !== false)
+      .map(a => `<button class="sm-app" data-app="${a.id}"><span class="sa-ico">${a.icon}</span><span class="sa-name">${esc(a.name)}</span></button>`)
+      .join('');
+    this.el.innerHTML = `
+      <div class="sm-user">
+        <div class="sm-avatar">Г</div>
+        <div>
+          <div class="sm-name">Гость Nebula</div>
+          <div class="sm-sub">Рабочая станция · без входа в систему</div>
+        </div>
+      </div>
+      <div class="sm-stats">
+        <div class="sm-stat"><div class="smk">Система</div><div class="smv">Nebula WebOS 1.0</div></div>
+        <div class="sm-stat"><div class="smk">Окна</div><div class="smv" id="sm-wins">0</div></div>
+        <div class="sm-stat"><div class="smk">Тема</div><div class="smv" id="sm-theme">—</div></div>
+        <div class="sm-stat"><div class="smk">Обои</div><div class="smv" id="sm-wall">—</div></div>
+        <div class="sm-stat"><div class="smk">Аптайм</div><div class="smv" id="sm-uptime">0с</div></div>
+        <div class="sm-stat sm-ram">
+          <div class="smk">Память</div>
+          <div class="smv" id="sm-ram">0 МБ / 8192 МБ</div>
+          <div class="ram-bar"><i id="sm-ram-bar"></i></div>
+        </div>
+      </div>
+      <div class="sm-sec-title">Приложения</div>
+      <div class="sm-apps">${apps}</div>
+      <div class="sm-foot">
+        <button class="sm-btn reboot" id="sm-reboot">⟳&nbsp; Перезагрузить WebOS</button>
+      </div>`;
+
+    $$('.sm-app', this.el).forEach(b => b.addEventListener('click', () => {
+      this.close();
+      WM.open(b.dataset.app);
+    }));
+    document.getElementById('sm-reboot').addEventListener('click', () => {
+      this.close();
+      Boot.reboot();
+    });
+  },
+
+  toggle() { this.el.classList.contains('show') ? this.close() : this.open(); },
+
+  open() {
+    this.el.classList.add('show');
+    document.getElementById('start-btn').classList.add('active');
+    this.refresh();
+    this.updater = setInterval(() => this.refresh(), 1000);
+    AudioSys.open();
+  },
+
+  close() {
+    this.el.classList.remove('show');
+    document.getElementById('start-btn').classList.remove('active');
+    clearInterval(this.updater);
+  },
+
+  refresh() {
+    const up = Math.floor((Date.now() - this.bootTime) / 1000);
+    const d = Math.floor(up / 86400), h = Math.floor(up / 3600) % 24, m = Math.floor(up / 60) % 60, s = up % 60;
+    document.getElementById('sm-uptime').textContent = (d ? d + 'д ' : '') + pad2(h) + ':' + pad2(m) + ':' + pad2(s);
+    document.getElementById('sm-wins').textContent = WM.count();
+    document.getElementById('sm-theme').textContent = THEMES[Settings.theme].name;
+    document.getElementById('sm-wall').textContent = WALLPAPERS.find(w => w.id === Settings.wallpaper).name;
+    const used = 2400 + WM.count() * 420 + Math.round(Math.random() * 120);
+    const pct = Math.min(100, Math.round(used / 8192 * 100));
+    document.getElementById('sm-ram').textContent = `${used} МБ / 8192 МБ`;
+    document.getElementById('sm-ram-bar').style.width = pct + '%';
+  },
+};
+
+/* ─────────── Контекстное меню рабочего стола ─────────── */
+const Ctx = {
+  el: null,
+
+  init() {
+    this.el = document.getElementById('ctx-menu');
+    document.getElementById('desktop').addEventListener('contextmenu', (e) => {
+      if (e.target.closest('.window')) return;
+      e.preventDefault();
+      this.show(e.clientX, e.clientY);
+    });
+    document.addEventListener('pointerdown', (e) => { if (!this.el.contains(e.target)) this.hide(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.hide(); });
+    window.addEventListener('resize', () => this.hide());
+  },
+
+  build(items) {
+    this.el.innerHTML = items.map(it =>
+      it.sep
+        ? '<div class="ctx-sep"></div>'
+        : `<div class="ctx-item" data-act="${it.act}"><span class="ctx-ico">${it.icon}</span>${it.label}</div>`
+    ).join('');
+    $$('.ctx-item', this.el).forEach(item => item.addEventListener('click', () => {
+      this.hide();
+      const fn = this.actions[item.dataset.act];
+      if (fn) fn();
+    }));
+  },
+
+  show(x, y) {
+    this.build([
+      { icon: '💻', label: 'Открыть терминал', act: 'terminal' },
+      { icon: '📝', label: 'Открыть заметки', act: 'notes' },
+      { icon: '🎨', label: 'Открыть настройки', act: 'settings' },
+      { sep: true },
+      { icon: '🖼️', label: 'Следующие обои', act: 'nextWall' },
+      { sep: true },
+      { icon: '⟳', label: 'Перезагрузить WebOS', act: 'reboot' },
+    ]);
+    const rect = this.el.getBoundingClientRect();
+    this.el.style.left = Math.min(x, window.innerWidth - rect.width - 8) + 'px';
+    this.el.style.top = Math.min(y, window.innerHeight - rect.height - 8) + 'px';
+    requestAnimationFrame(() => this.el.classList.add('show'));
+  },
+
+  hide() { this.el.classList.remove('show'); },
+
+  actions: {
+    terminal: () => WM.open('terminal'),
+    notes: () => WM.open('notes'),
+    settings: () => WM.open('settings'),
+    reboot: () => Boot.reboot(),
+    nextWall() {
+      const ids = WALLPAPERS.map(w => w.id);
+      const next = ids[(ids.indexOf(Settings.wallpaper) + 1) % ids.length];
+      Settings.applyWallpaper(next);
+      AudioSys.click();
+    },
+  },
+};
+/* __JS_PART4__ */
+/* __JS_PART3__ */
+/* __JS_PART4__ */
+</script>
+</body>
+</html>

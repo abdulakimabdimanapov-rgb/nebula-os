@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Nebula OS — операционная система в браузере. Чистый HTML, CSS и JavaScript без внешних библиотек." />
+  <title>Nebula OS — браузерная ОС</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════ ЭКРАН ЗАГРУЗКИ ═══════════════ -->
+  <div id="boot" aria-hidden="true">
+    <div class="boot-inner">
+      <div class="boot-logo">◐</div>
+      <div class="boot-title">NEBULA<span>OS</span></div>
+      <div class="boot-bar"><i></i></div>
+      <div class="boot-hint" id="boot-hint">загрузка ядра…</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ РАБОЧИЙ СТОЛ ═══════════════ -->
+  <main id="desktop" data-wallpaper="aurora">
+    <!-- Живой фон: canvas-частицы (создаётся в script.js) -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <!-- Слои обоев (фон + «живые» размытые пятна) -->
+    <div class="wallpaper-base" aria-hidden="true"></div>
+    <div class="wallpaper-blobs" aria-hidden="true"></div>
+
+    <!-- Иконки рабочего стола (создаются динамически в script.js) -->
+    <div id="desktop-icons" aria-label="Рабочий стол"></div>
+
+    <!-- Слой окон создаётся динамически в script.js -->
+    <section id="windows-layer"></section>
+  </main>
+
+  <!-- ═══════════════ ПАНЕЛЬ ЗАДАЧ / ДОК ═══════════════ -->
+  <nav id="dock" aria-label="Панель задач">
+    <button id="start-btn" title="Пуск" aria-label="Меню Пуск">◐</button>
+    <div class="dock-divider" aria-hidden="true"></div>
+    <div id="dock-icons"></div>
+    <div class="dock-divider" aria-hidden="true"></div>
+    <button id="notif-bell" class="dock-bell" aria-label="Центр уведомлений" title="Уведомления">
+      <span class="bell-ico">🔔</span>
+      <span id="notif-badge" class="notif-badge" hidden></span>
+    </button>
+    <div class="dock-divider" aria-hidden="true"></div>
+    <div id="tray">
+      <button class="tray-btn" id="tray-wifi" title="Wi-Fi: подключено" aria-label="Wi-Fi">📶</button>
+      <button class="tray-btn" id="tray-vol" title="Громкость" aria-label="Громкость">🔊</button>
+      <button class="tray-btn" id="tray-full" title="Полноэкранный режим" aria-label="Полноэкранный режим">⛶</button>
+    </div>
+    <div class="dock-clock">
+      <span id="clock-time">--:--:--</span>
+      <span id="clock-date">—</span>
+    </div>
+  </nav>
+
+  <!-- Попап громкости -->
+  <div id="vol-pop" role="dialog" aria-label="Громкость">
+    <div class="vol-row">
+      <span class="vol-ico" id="vol-ico">🔊</span>
+      <input type="range" id="vol-slider" min="0" max="100" value="70" aria-label="Уровень громкости" />
+    </div>
+    <div class="vol-row">
+      <button class="vol-mute" id="vol-mute" type="button">🔇 Выключить звук</button>
+      <button class="vol-test" id="vol-test" type="button">▶ Тест</button>
+    </div>
+  </div>
+
+  <!-- Меню «Пуск» -->
+  <div id="start-menu" role="menu" aria-label="Меню Пуск"></div>
+
+  <!-- Контекстное меню рабочего стола (ПКМ) -->
+  <div id="ctx-menu" role="menu" aria-label="Контекстное меню"></div>
+
+  <!-- Центр уведомлений (панель) и стек всплывающих уведомлений -->
+  <div id="notif-center" role="dialog" aria-label="Центр уведомлений"></div>
+  <div id="toasts" aria-live="polite" aria-label="Уведомления"></div>
+
+  <!-- Полноэкранный слой «Матрицы» из терминала -->
+  <canvas id="matrix-layer" aria-hidden="true"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>
